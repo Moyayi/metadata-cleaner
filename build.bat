@@ -2,7 +2,6 @@
 setlocal EnableDelayedExpansion
 
 set "PROJECT_DIR=%~dp0"
-set "PYTHON=C:\Users\Peter\AppData\Local\Programs\Python\Python313\python.exe"
 
 echo.
 echo =========================================================
@@ -10,16 +9,83 @@ echo   MetaCleaner - Script de compilacion
 echo =========================================================
 echo.
 
-:: Verificar Python
-if not exist "%PYTHON%" (
-    echo [ERROR] Python no encontrado en:
-    echo         %PYTHON%
+:: ── Detectar Python automaticamente ──────────────────────────────────
+::
+:: Orden de busqueda:
+::   1. Launcher "py" (instalado con Python en Windows, el mas fiable)
+::   2. "python" en el PATH del sistema
+::   3. Ruta tipica de instalacion para el usuario actual
+::   4. Rutas tipicas de instalacion global
+
+set "PYTHON="
+
+:: Intento 1: Python Launcher (py.exe)
+where py >nul 2>&1
+if not errorlevel 1 (
+    for /f "delims=" %%P in ('py -c "import sys; print(sys.executable)"') do set "PYTHON=%%P"
+)
+
+:: Intento 2: python en PATH
+if not defined PYTHON (
+    where python >nul 2>&1
+    if not errorlevel 1 (
+        for /f "delims=" %%P in ('python -c "import sys; print(sys.executable)"') do set "PYTHON=%%P"
+    )
+)
+
+:: Intento 3: python3 en PATH
+if not defined PYTHON (
+    where python3 >nul 2>&1
+    if not errorlevel 1 (
+        for /f "delims=" %%P in ('python3 -c "import sys; print(sys.executable)"') do set "PYTHON=%%P"
+    )
+)
+
+:: Intento 4: rutas tipicas de instalacion por usuario
+if not defined PYTHON (
+    for %%V in (313 312 311 310) do (
+        if not defined PYTHON (
+            if exist "%LOCALAPPDATA%\Programs\Python\Python%%V\python.exe" (
+                set "PYTHON=%LOCALAPPDATA%\Programs\Python\Python%%V\python.exe"
+            )
+        )
+    )
+)
+
+:: Intento 5: rutas tipicas de instalacion global
+if not defined PYTHON (
+    for %%V in (313 312 311 310) do (
+        if not defined PYTHON (
+            if exist "C:\Python%%V\python.exe" (
+                set "PYTHON=C:\Python%%V\python.exe"
+            )
+        )
+    )
+)
+
+:: Verificar que se encontro Python
+if not defined PYTHON (
+    echo [ERROR] No se encontro Python en este sistema.
     echo.
-    echo Edita la variable PYTHON al inicio de build.bat
+    echo Soluciones:
+    echo   1. Instala Python desde https://www.python.org/downloads/
+    echo      Marca la opcion "Add Python to PATH" durante la instalacion.
+    echo   2. O edita este archivo y escribe la ruta manualmente:
+    echo      set "PYTHON=C:\ruta\a\tu\python.exe"
+    echo.
     pause
     exit /b 1
 )
-echo [OK] Python encontrado.
+
+echo [OK] Python encontrado en: %PYTHON%
+
+:: Verificar version minima (3.10+)
+for /f "delims=" %%V in ('"%PYTHON%" -c "import sys; print(sys.version_info.major*10+sys.version_info.minor)"') do set "PY_VER=%%V"
+if %PY_VER% LSS 310 (
+    echo [ERROR] Se requiere Python 3.10 o superior. Version encontrada es anterior.
+    pause
+    exit /b 1
+)
 
 :: Instalar/actualizar dependencias
 echo.
