@@ -1,0 +1,18 @@
+# MetaCleaner — Dependencias
+# Instalar con: pip install -r requirements.txt
+
+# Interfaz gráfica
+customtkinter>=5.2.0
+tkinterdnd2>=0.3.0       # Drag & Drop (opcional pero recomendado)
+
+# Documentos Word
+python-docx>=1.1.0
+
+# Hojas de cálculo Excel
+openpyxl>=3.1.0
+
+# PDFs (pypdf es el sucesor moderno de PyPDF2)
+pypdf>=4.0.0
+
+# Imágenes y datos EXIF
+Pillow>=10.0.0
